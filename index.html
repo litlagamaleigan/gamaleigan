@@ -2,6 +2,14 @@
 <html lang="is">
 <head>
 <meta name="google-site-verification" content="31Qq4evCXSdu8eAdTtGKOYFCZKFPWKvl_J3pH66Atp0" />
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LCRDF2KBRH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LCRDF2KBRH');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Litla Gámaleigan — Gámaleiga & Vetrarþjónusta á Höfuðborgarsvæðinu</title>
@@ -286,15 +294,30 @@ footer{background:var(--dark);border-top:1px solid rgba(255,255,255,.05);padding
   .footer-top{grid-template-columns:1fr 1fr}
   .nav-links{display:none}
   .nav-ham{display:flex}
+  #um-okkur .section-inner > div{grid-template-columns:1fr !important}
 }
 @media(max-width:640px){
-  .section{padding:64px 5%}
+  .section{padding:56px 4%}
   .form-grid{grid-template-columns:1fr}
   .footer-top{grid-template-columns:1fr}
   .cta-inner{flex-direction:column;align-items:flex-start}
   .cta-phone{align-items:flex-start}
   .how-steps{grid-template-columns:1fr}
   .stats-bar-inner{grid-template-columns:1fr 1fr}
+  .hero-content{padding:100px 4% 60px}
+  .hero h1{font-size:clamp(32px,9vw,56px);letter-spacing:-1.5px}
+  .hero-actions{flex-direction:column;align-items:flex-start}
+  .btn-primary,.btn-outline{width:100%;text-align:center;justify-content:center}
+  .section-title{font-size:clamp(28px,7vw,42px);letter-spacing:-1px}
+  .winter-card{padding:36px 24px}
+  .cta-band{padding:56px 4%}
+  .cta-text h2{font-size:clamp(28px,7vw,42px)}
+  .cta-phone-num{font-size:30px}
+  .contact-form-wrap{padding:24px 20px}
+  .hero-trust{flex-wrap:wrap}
+  .stat-row-num{font-size:32px}
+  .footer-top{gap:32px}
+  nav{padding:0 4%}
 }
 
 /* ── SKILMÁLAR MODAL ── */
