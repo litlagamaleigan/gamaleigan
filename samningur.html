@@ -1408,7 +1408,11 @@ window.addEventListener('load', async () => {
   // Er þetta "reset password" tölvupóstlinkur? Supabase-js er þá þegar
   // búið að lesa token-ið úr slóðinni (#access_token=...&type=recovery)
   // og útbúa tímabundna innskráningu — biðja þá um nýtt lykilorð.
-  if (window.location.hash.includes('type=recovery')) {
+  // cameFromRecovery er sett af onAuthStateChange (PASSWORD_RECOVERY) sem
+  // grípur þetta ÁÐUR en Supabase-js hreinsar hash-ið úr slóðinni — sá
+  // fáni er áreiðanlegri en að lesa hash-ið sjálf hér, því það getur
+  // verið þegar horfið á þessum tímapunkti.
+  if (cameFromRecovery || window.location.hash.includes('type=recovery')) {
     showScreen('setPasswordScreen');
     return;
   }
