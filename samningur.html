@@ -535,6 +535,7 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
     </div>
     <div class="modal-body" id="detailBody"></div>
     <div class="modal-footer">
+      <button class="btn-cancel" style="color:var(--red);border-color:var(--red)" onclick="deleteContract(currentContractId)">🗑 Eyða samningi</button>
       <button class="btn-cancel" onclick="closeDetailModal()">Loka</button>
       <button class="btn-cancel" style="color:var(--gray)" onclick="downloadContract(currentContractId)">⬇ Sækja PDF</button>
       <button class="btn-create" onclick="copyCurrentLink()">Afrita link</button>
@@ -1200,6 +1201,23 @@ function openDetail(id) {
 
 function closeDetailModal() {
   document.getElementById('detailModal').classList.remove('open');
+}
+
+async function deleteContract(id) {
+  if (!id) return;
+  const c = contracts.find(x => x.id === id);
+  const nafn = c ? (c.company || c.name) : 'þennan samning';
+  const stadfest = confirm(`Eyða samningi fyrir "${nafn}"?\n\nÞetta er ekki hægt að afturkalla — samningurinn og öll gögn hans (mynd, verð, saga) hverfa endanlega.`);
+  if (!stadfest) return;
+
+  const { error } = await sb.from('contracts').delete().eq('id', id);
+  if (error) {
+    alert('Villa við að eyða samningi: ' + error.message);
+    return;
+  }
+  closeDetailModal();
+  contracts = contracts.filter(x => x.id !== id);
+  renderAdmin();
 }
 
 // ── CONTRACT HELPER FUNCTIONS ──
