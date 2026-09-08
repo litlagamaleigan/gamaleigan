@@ -340,7 +340,7 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
     <div class="modal-body">
       <div class="form-row-2">
         <div class="form-group">
-          <label>Nafn viðskiptavinar</label>
+          <label>Nafn tengiliðs / undirritara</label>
           <input type="text" id="f_name" placeholder="Jón Jónsson">
         </div>
         <div class="form-group">
@@ -354,7 +354,7 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
           <input type="tel" id="f_phone" placeholder="777-1234">
         </div>
         <div class="form-group">
-          <label>Fyrirtæki (ef við á)</label>
+          <label>Fyrirtæki (ef samningur er við fyrirtæki)</label>
           <input type="text" id="f_company" placeholder="Fyrirtæki ehf.">
         </div>
         <div class="form-group">
@@ -362,10 +362,11 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
           <input type="text" id="f_kennitala_einst" placeholder="000000-0000" maxlength="11">
         </div>
         <div class="form-group">
-          <label>Kennitala fyrirtækis (ef við á)</label>
+          <label>Kennitala fyrirtækis (verður kt. viðskiptavinar)</label>
           <input type="text" id="f_kennitala_fyrirt" placeholder="000000-0000" maxlength="11">
         </div>
       </div>
+      <p style="font-size:12px;color:var(--gray);margin:-8px 0 4px">Ef fyrirtæki er skráð verður það sjálfkrafa hinn formlegi viðskiptavinur á samningnum og í undirskrift — nafn og kennitala hér að ofan verða þá skráð sem undirritari / fyrirsvarsmaður.</p>
       <div class="form-group">
         <label>Þjónusta</label>
         <select id="f_service" onchange="updateServiceType()">
@@ -758,10 +759,15 @@ function downloadContract(id) {
   <tr><td>Þjónustuaðili</td><td>Gámaleigan ehf.</td></tr>
   <tr><td>Kennitala þjónustuaðila</td><td>671021-2150</td></tr>
   <tr><td>VSK númer</td><td>143180</td></tr>
-  <tr><td>Viðskiptavinur</td><td>${c.name}</td></tr>
+  ${c.company ? `
+  <tr><td>Viðskiptavinur</td><td>${c.company}</td></tr>
+  ${c.kennitala_fyrirt ? `<tr><td>Kennitala viðskiptavinar</td><td>${c.kennitala_fyrirt}</td></tr>` : ''}
+  <tr><td>Undirritari / Fyrirsvarsmaður</td><td>${c.name}</td></tr>
   ${c.kennitala_einst ? `<tr><td>Kennitala undirritara</td><td>${c.kennitala_einst}</td></tr>` : ''}
-  ${c.company ? `<tr><td>Fyrirtæki</td><td>${c.company}</td></tr>` : ''}
-  ${c.kennitala_fyrirt ? `<tr><td>Kennitala fyrirtækis</td><td>${c.kennitala_fyrirt}</td></tr>` : ''}
+  ` : `
+  <tr><td>Viðskiptavinur</td><td>${c.name}</td></tr>
+  ${c.kennitala_einst ? `<tr><td>Kennitala viðskiptavinar</td><td>${c.kennitala_einst}</td></tr>` : ''}
+  `}
   <tr><td>Netfang</td><td>${c.email}</td></tr>
   <tr><td>Sími</td><td>${c.phone || '—'}</td></tr>
 </table>
@@ -782,7 +788,7 @@ ${pricingPrint ? `<div class="price-section">${pricingPrint}</div>` : ''}
 <table class="terms-tbl">${terms}</table>
 
 <div class="sign-area">
-  <div class="sign-box">Undirskrift viðskiptavinar<br><br>_________________________<br><small style="color:#999">Nafn: ${c.name}</small><br><small style="color:#999">Dagsetning: _____________</small></div>
+  <div class="sign-box">${c.company ? `Undirskrift fyrirsvarsmanns f.h. ${c.company}` : 'Undirskrift viðskiptavinar'}<br><br>_________________________<br><small style="color:#999">Nafn: ${c.name}</small><br><small style="color:#999">Dagsetning: _____________</small></div>
   <div class="sign-box">Undirskrift Gámaleigunar<br><br>_________________________</div>
 </div>
 
@@ -971,7 +977,7 @@ function renderTable(data) {
     const expiresIn = c.status === 'pending' && !isExpired(c) ? Math.ceil((30*24*60*60*1000 - (Date.now()-c.created)) / (24*60*60*1000)) : null;
     return `
     <div class="table-row" onclick="openDetail('${c.id}')">
-      <div class="table-cell name">${c.name}<br><span class="email">${c.company || c.email}</span></div>
+      <div class="table-cell name">${c.company || c.name}<br><span class="email">${c.company ? c.name : c.email}</span></div>
       <div class="table-cell">${c.service}</div>
       <div class="table-cell" style="color:var(--gray);font-size:13px">${formatDate(c.created)}${expiresIn ? `<div style="font-size:11px;color:var(--y)">Rennur út eftir ${expiresIn}d</div>` : ''}</div>
       <div class="table-cell">
@@ -987,6 +993,7 @@ function renderTable(data) {
 function filterContracts(q) {
   const filtered = contracts.filter(c =>
     c.name.toLowerCase().includes(q.toLowerCase()) ||
+    (c.company && c.company.toLowerCase().includes(q.toLowerCase())) ||
     c.email.toLowerCase().includes(q.toLowerCase()) ||
     c.service.toLowerCase().includes(q.toLowerCase())
   );
@@ -1134,12 +1141,17 @@ function openDetail(id) {
   document.getElementById('detailBody').innerHTML = `
     <div class="detail-section">
       <h4>Viðskiptavinur</h4>
+      ${c.company ? `
+      <div class="detail-row"><span class="detail-key">Fyrirtæki</span><span class="detail-val">${c.company}</span></div>
+      <div class="detail-row"><span class="detail-key">Kt. viðskiptavinar</span><span class="detail-val">${c.kennitala_fyrirt || '—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Undirritari / fyrirsvarsm.</span><span class="detail-val">${c.name}</span></div>
+      <div class="detail-row"><span class="detail-key">Kt. undirritara</span><span class="detail-val">${c.kennitala_einst || '—'}</span></div>
+      ` : `
       <div class="detail-row"><span class="detail-key">Nafn</span><span class="detail-val">${c.name}</span></div>
       <div class="detail-row"><span class="detail-key">Kennitala</span><span class="detail-val">${c.kennitala_einst || '—'}</span></div>
+      `}
       <div class="detail-row"><span class="detail-key">Netfang</span><span class="detail-val">${c.email}</span></div>
       <div class="detail-row"><span class="detail-key">Sími</span><span class="detail-val">${c.phone || '—'}</span></div>
-      <div class="detail-row"><span class="detail-key">Fyrirtæki</span><span class="detail-val">${c.company || '—'}</span></div>
-      <div class="detail-row"><span class="detail-key">Kt. fyrirtækis</span><span class="detail-val">${c.kennitala_fyrirt || '—'}</span></div>
     </div>
     <div class="detail-section">
       <h4>Samningur</h4>
@@ -1328,10 +1340,10 @@ async function renderContractView(id) {
     <div class="section-block">
       <div class="section-block-title">Samningsupplýsingar</div>
       <div class="info-grid">
-        <div class="info-item"><div class="info-item-lbl">Viðskiptavinur</div><div class="info-item-val">${c.name}${c.company ? ' — ' + c.company : ''}</div></div>
+        <div class="info-item"><div class="info-item-lbl">Viðskiptavinur</div><div class="info-item-val">${c.company || c.name}</div></div>
         <div class="info-item"><div class="info-item-lbl">Þjónusta</div><div class="info-item-val hl">${c.service}</div></div>
-        ${c.kennitala_einst ? `<div class="info-item"><div class="info-item-lbl">Kennitala einstaklings / undirritara</div><div class="info-item-val">${c.kennitala_einst}</div></div>` : ''}
-        ${c.kennitala_fyrirt ? `<div class="info-item"><div class="info-item-lbl">Kennitala fyrirtækis</div><div class="info-item-val">${c.kennitala_fyrirt}</div></div>` : ''}
+        ${c.company ? `<div class="info-item"><div class="info-item-lbl">Kennitala viðskiptavinar</div><div class="info-item-val">${c.kennitala_fyrirt || '—'}</div></div>` : c.kennitala_einst ? `<div class="info-item"><div class="info-item-lbl">Kennitala viðskiptavinar</div><div class="info-item-val">${c.kennitala_einst}</div></div>` : ''}
+        ${c.company ? `<div class="info-item"><div class="info-item-lbl">Undirritari / fyrirsvarsmaður</div><div class="info-item-val">${c.name}${c.kennitala_einst ? ' · kt. ' + c.kennitala_einst : ''}</div></div>` : ''}
         <div class="info-item"><div class="info-item-lbl">Heimilisfang</div><div class="info-item-val">${c.address || '—'}</div></div>
         <div class="info-item"><div class="info-item-lbl">Gildir til</div><div class="info-item-val">${formatDate(c.created + 30*24*60*60*1000)}</div></div>
         ${c.notes ? `<div class="info-item" style="grid-column:1/-1"><div class="info-item-lbl">Athugasemdir</div><div class="info-item-val" style="font-weight:400;font-size:14px;color:var(--gray)">${c.notes}</div></div>` : ''}
