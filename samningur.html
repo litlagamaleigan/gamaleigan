@@ -705,8 +705,8 @@ function downloadContract(id) {
       ${priceRowPrint('Tímagjald 16T Hjólavél', c.timagjald_hjol)}
       ${priceRowPrint('Komugjald vörubíll', c.komugjald_vorubil)}
       ${priceRowPrint('Losunargjald á snjó', c.losunargjald_snjo)}
-    </table>
-    ${c.komugjald_hjol && c.timagjald_hjol ? `<p style="font-size:10px;color:#888;margin-top:2px">Komugjald 16T Hjólavél er fast gjald fyrir útkall, óháð vinnutíma. Tímagjald 16T Hjólavél leggst við á hverja klukkustund sem vélin er við vinnu á staðnum.</p>` : ''}` : `
+      ${c.komugjald_hjol && c.timagjald_hjol ? `<tr><td colspan="2" style="font-size:10px;color:#888;font-weight:400;padding-top:4px">Komugjald 16T Hjólavél er fast gjald fyrir útkall, óháð vinnutíma. Tímagjald 16T Hjólavél leggst við á hverja klukkustund sem vélin er við vinnu á staðnum.</td></tr>` : ''}
+    </table>` : `
     <h3>Verðflokkar gámaleiga (án VSK)</h3>
     <table class="price-tbl">
       ${priceRowPrint('Mánaðaráskrift', c.manadarsaskrift)}
@@ -737,9 +737,9 @@ function downloadContract(id) {
   .logo span{display:block;font-size:10px;color:#888;font-weight:400;margin-top:3px}
   .status{background:${c.status==="accepted"?"#e8f5e9":"#fce4e4"};color:${c.status==="accepted"?"#2e7d32":"#c62828"};border-radius:4px;padding:4px 12px;font-size:11px;font-weight:700;text-transform:uppercase}
   h2{font-size:22px;font-weight:900;margin:0 0 18px;color:#111}
-  h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin:18px 0 8px;border-top:1px solid #eee;padding-top:12px}
+  h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin:12px 0 6px;border-top:1px solid #eee;padding-top:8px}
   table{width:100%;border-collapse:collapse;margin-bottom:4px}
-  td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+  td{padding:5px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}
   td:first-child{color:#666;width:45%}
   td:last-child{font-weight:600}
   .price-tbl td:last-child{color:#E8925A;font-size:14px}
