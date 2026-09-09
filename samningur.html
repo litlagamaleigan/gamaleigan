@@ -600,23 +600,23 @@ function updateServiceType() {
   }
 }
 
-function getTermsHTML(service) {
+function getTermsHTML(service, isFinal) {
   const type = getServiceType(service);
   if (type === 'vetrar') {
     return `
-      <div class="term-line"><div class="term-num">1.</div><div class="term-txt"><strong>Gildistími og uppsögn:</strong> Samningur þessi er ótímabundinn. Báðir aðilar geta sagt honum upp að gefnum 1 mánaðar skriflegum fyrirvara á netfang þjónustuaðila. Framlengist sjálfkrafa yfir á næsta vetur nema tilkynnt sé um annað.</div></div>
+      <div class="term-line"><div class="term-num">1.</div><div class="term-txt"><strong>Gildistími og uppsögn:</strong> Samningur þessi er bundinn við vetrartímabilið 15. október til 15. apríl ár hvert. Á meðan tímabilið stendur verður samningnum hvorki sagt upp né honum rift, nema um verulegar vanefndir sé að ræða, t.d. sinni þjónustuaðili ekki þjónustunni eða greiði viðskiptavinur ekki reikninga, er gagnaðila heimilt að rifta samningnum fyrirvaralaust. Samningurinn framlengist sjálfkrafa fyrir næsta vetrartímabil nema honum sé sagt upp skriflega, á netfang þjónustuaðila, eigi síðar en 15. júlí ár hvert, þ.e. með minnst 3 mánaða fyrirvara fyrir upphaf næsta tímabils þann 15. október.</div></div>
       <div class="term-line"><div class="term-num">2.</div><div class="term-txt"><strong>Greiðsluskilmálar:</strong> Reikningar eru gefnir út mánaðarlega eftir á fyrir veitta þjónustu. Gjalddagi er 1. hvers mánaðar og eindagi 14 dögum síðar. Sé ekki greitt á eindaga reiknast dráttarvextir frá gjalddaga.</div></div>
       <div class="term-line"><div class="term-num">3.</div><div class="term-txt"><strong>Umfang þjónustu:</strong> Gámaleigan ehf. sér um handmokstur, skafningu, söltun eða söndun á skilgreindu svæði eftir þörfum og völdum þjónustuflokki.</div></div>
       <div class="term-line"><div class="term-num">4.</div><div class="term-txt"><strong>Snjómokstur:</strong> Snjór er fjarlægður af samningsbundnum svæðum með tækjum.</div></div>
       <div class="term-line"><div class="term-num">5.</div><div class="term-txt"><strong>Söltun:</strong> Salti er dreift til að vinna gegn hálku og ísingu á umbeðnum svæðum.</div></div>
-      <div class="term-line"><div class="term-num">6.</div><div class="term-txt"><strong>Handmokstur / söltun og söndun:</strong> Þjónusta á svæðum sem ekki er hægt að ná til með vélum, miðast við umsamið svæði samkvæmt meðfylgjandi mynd/korti (fylgiskjal 1), sé slíkt fylgiskjal til staðar, eða samkvæmt nánara samkomulagi aðila.</div></div>
+      <div class="term-line"><div class="term-num">6.</div><div class="term-txt"><strong>Handmokstur / söltun og söndun:</strong> Ef samningur þessi felur í sér þjónustu við handmokstur á svæðum sem ekki er hægt að ná til með vélum, skal það svæði vera sérstaklega skilgreint, t.d. með mynd, og tilgreint í athugasemdum samningsins.</div></div>
       <div class="term-line"><div class="term-num">7.</div><div class="term-txt"><strong>Vöktun:</strong> Gámaleigan ehf. fylgist reglulega með veðurspám og veðurskilyrðum á tímabilinu 15. október til 15. apríl. Þjónustuaðili metur sjálfstætt hvenær þörf er á aðgerðum með hliðsjón af veðurspá, ísingu og ástandi svæðisins. Heimsóknir fara eftir veðurskilyrðum. Viðskiptavinur getur alltaf haft samband ef hann telur þörf á aðgerð.</div></div>
-      <div class="term-line"><div class="term-num">8.</div><div class="term-txt"><strong>Þjónustuflokkar:</strong> 1. flokkur — við minnstu þörf. 2. flokkur — um leið og eðlileg þörf skapast. 3. flokkur — einungis þegar brýn nauðsyn krefur.</div></div>
+      <div class="term-line"><div class="term-num">8.</div><div class="term-txt"><strong>Þjónustuflokkar:</strong> 1. flokkur: við minnstu þörf. 2. flokkur: um leið og eðlileg þörf skapast. 3. flokkur: einungis þegar brýn nauðsyn krefur.</div></div>
       <div class="term-line"><div class="term-num">9.</div><div class="term-txt"><strong>Aðgengi og hindranir:</strong> Viðskiptavinur skal tryggja aðgengi að þjónustusvæðinu. Gámaleigan ehf. ber ekki ábyrgð á því ef ekki er hægt að sinna mokstri eða söltun vegna bíla sem leggja í stæði eða annarra hindrana sem loka fyrir aðgengi tækja. Mælst er til þess að viðskiptavinur merki sérstaklega ójöfnur, brunna eða lága kantsteina.</div></div>
       <div class="term-line"><div class="term-num">10.</div><div class="term-txt"><strong>Verð:</strong> Gámaleigunni ehf. er heimilt að hækka verð einu sinni á ári í samræmi við vísitölu neysluverðs. Viðskiptavinur fær mánaðarfyrirvara.</div></div>
       <div class="term-line"><div class="term-num">11.</div><div class="term-txt"><strong>Ábyrgð:</strong> Gámaleigan ehf. ber enga skaðabótaábyrgð á líkams- eða eignatjóni vegna hálku á þjónustusvæðinu, né á skemmdum á kantsteinum eða hlutum undir snjó.</div></div>
       <div class="term-line"><div class="term-num">12.</div><div class="term-txt"><strong>Óviðráðanleg atvik:</strong> Gámaleigan ehf. undanskilur sig ábyrgð á töfum eða frestun á þjónustu ef um er að ræða óviðráðanleg atvik, svo sem bilanir á tækjum, lokanir á vegum eða önnur atvik sem þjónustuaðili hefur enga stjórn á.</div></div>
-      <div class="term-line"><div class="term-num">13.</div><div class="term-txt"><strong>Lögsaga:</strong> Samningur þessi heyrir undir íslensk lög og Héraðsdóm Reykjavíkur. Öll tilboð eru trúnaðarmál og gilda í 30 daga frá útgáfudegi.</div></div>
+      <div class="term-line"><div class="term-num">13.</div><div class="term-txt"><strong>Lögsaga:</strong> Samningur þessi heyrir undir íslensk lög og Héraðsdóm Reykjavíkur.${isFinal ? '' : ' Öll tilboð eru trúnaðarmál og gilda í 30 daga frá útgáfudegi.'}</div></div>
     `;
   } else {
     return `
@@ -713,7 +713,7 @@ function downloadContract(id) {
     </table>`;
 
   const levels = {'1':'1. flokkur — Hæsta þjónustustig','2':'2. flokkur — Hefðbundnar kröfur','3':'3. flokkur — Lágmarksþjónusta'};
-  const terms = getTermsHTML(c.service)
+  const terms = getTermsHTML(c.service, true)
     .replace(/<div class="term-line">/g,'<tr>')
     .replace(/<\/div>\s*<\/div>/g,'</td></tr>')
     .replace(/<\/div>/g,'')
