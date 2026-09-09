@@ -424,6 +424,10 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
           <label>Verð gámaleiga (kr. án VSK)</label>
           <input type="text" id="f_price" placeholder="t.d. 45.000 kr/mán">
         </div>
+        <div class="form-group">
+          <label>Samningsdagsetning (birtist á samningnum)</label>
+          <input type="date" id="f_contract_date">
+        </div>
       </div>
 
       <!-- VERÐFLOKKAR VETRARÞJÓNUSTA -->
@@ -783,7 +787,7 @@ function downloadContract(id) {
   <tr><td>Þjónusta</td><td>${c.service}</td></tr>
   <tr><td>Heimilisfang þjónustu</td><td>${c.address || '—'}</td></tr>
   ${c.thjonustuflokkar ? `<tr><td>Þjónustuflokkar</td><td>${levels[c.thjonustuflokkar] || ''}</td></tr>` : ''}
-  <tr><td>Samningur dagsettur</td><td>${formatDate(c.created)}</td></tr>
+  <tr><td>Samningur dagsettur</td><td>${formatDate(c.contract_date || c.created)}</td></tr>
   ${c.notes ? `<tr><td>Athugasemdir</td><td>${c.notes}</td></tr>` : ''}
 </table>
 
@@ -1014,10 +1018,16 @@ function filterContracts(q) {
 }
 
 // ── NEW CONTRACT ──
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
 function openNewModal() {
   editingContractId = null;
   document.getElementById('newModalTitle').textContent = 'Nýr þjónustusamningur';
   document.getElementById('newModalSubmitBtn').textContent = 'Búa til samning →';
+  document.getElementById('f_contract_date').value = todayISO();
   document.getElementById('newModal').classList.add('open');
 }
 
@@ -1042,6 +1052,8 @@ function openEditModal(id) {
   document.getElementById('f_thjonustuflokkar').value = c.thjonustuflokkar || '';
   showServiceLevel();
 
+  document.getElementById('f_contract_date').value = c.contract_date || todayISO();
+
   currentImageBase64 = c.image || null;
   document.getElementById('f_image').value = '';
   if (c.image) {
@@ -1063,7 +1075,7 @@ function openEditModal(id) {
 function closeNewModal() {
   document.getElementById('newModal').classList.remove('open');
   editingContractId = null;
-  ['f_name','f_email','f_phone','f_company','f_kennitala_einst','f_kennitala_fyrirt','f_address','f_price','f_notes','f_voktun','f_snjomokstur','f_soltun','f_snjosalt','f_komugjald_hjol','f_timagjald_hjol','f_komugjald_vorubil','f_losunargjald_snjo','f_manadarsaskrift','f_komugjald','f_losunargjald','f_losunargjald_stein','f_faerslugjald','f_faerslugjald_utan'].forEach(id => {
+  ['f_name','f_email','f_phone','f_company','f_kennitala_einst','f_kennitala_fyrirt','f_address','f_price','f_contract_date','f_notes','f_voktun','f_snjomokstur','f_soltun','f_snjosalt','f_komugjald_hjol','f_timagjald_hjol','f_komugjald_vorubil','f_losunargjald_snjo','f_manadarsaskrift','f_komugjald','f_losunargjald','f_losunargjald_stein','f_faerslugjald','f_faerslugjald_utan'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.value = '';
   });
@@ -1086,6 +1098,7 @@ async function createContract() {
   const service = document.getElementById('f_service').options[document.getElementById('f_service').selectedIndex]?.text || '';
   const address = document.getElementById('f_address').value.trim();
   const price = document.getElementById('f_price').value.trim();
+  const contract_date = document.getElementById('f_contract_date').value || null;
   const notes = document.getElementById('f_notes').value.trim();
   const type = getServiceType(service);
   const voktun = document.getElementById('f_voktun').value.trim();
@@ -1111,6 +1124,7 @@ async function createContract() {
 
   const newContract = {
     name, email, phone, company, kennitala_einst, kennitala_fyrirt, service, address, notes,
+    contract_date,
     type: getServiceType(service),
     voktun, snjomokstur, soltun, snjosalt,
     komugjald_hjol, timagjald_hjol, komugjald_vorubil, losunargjald_snjo,
@@ -1242,6 +1256,7 @@ function openDetail(id) {
     <div class="detail-section">
       <h4>Staða</h4>
       <div class="detail-row"><span class="detail-key">Staða</span><span class="detail-val"><span class="status-badge ${getStatusClass(getStatus(c))}"><span class="status-dot"></span>${getStatusLabel(getStatus(c))}</span></span></div>
+      <div class="detail-row"><span class="detail-key">Samningur dagsettur</span><span class="detail-val">${formatDate(c.contract_date || c.created)}</span></div>
       <div class="detail-row"><span class="detail-key">Búinn til</span><span class="detail-val">${formatDate(c.created)}</span></div>
       <div class="detail-row"><span class="detail-key">Rennur út</span><span class="detail-val">${formatDate(c.created + 30*24*60*60*1000)}</span></div>
       <div class="detail-row"><span class="detail-key">Skoðað af viðsk.</span><span class="detail-val" style="color:${c.viewedAt ? 'var(--blue)' : 'var(--gray)'}">${c.viewedAt ? '👁 ' + formatDate(c.viewedAt) : 'Ekki skoðað'}</span></div>
