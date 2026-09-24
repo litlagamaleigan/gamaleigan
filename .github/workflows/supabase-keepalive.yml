@@ -1,0 +1,29 @@
+name: Supabase keep-alive
+
+# Kemur í veg fyrir að Supabase-verkefnið (gamaleigan-samningskerfi) fari
+# sjálfkrafa í "pause" eftir ~7 daga án virkni. Keyrir tvisvar í viku á
+# GitHub's eigin þjónum — óháð því hvort tölva eða vafri er opinn.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1,4'   # mánudaga og fimmtudaga kl. 06:00 UTC
+  workflow_dispatch: {}      # leyfir handvirka keyrslu úr "Actions" flipanum
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Senda létta fyrirspurn á Supabase til að halda verkefninu virku
+        run: |
+          STATUS=$(curl -sS -o /tmp/resp.json -w "%{http_code}" --max-time 20 \
+            "https://uzpadpezjoyoqieaddwa.supabase.co/rest/v1/contracts?select=id&limit=1" \
+            -H "apikey: sb_publishable__WLSGJlDtiHcJewkmkYy1Q_8oQyi7jj") || STATUS="000"
+          echo "Supabase svaraði með HTTP $STATUS"
+          cat /tmp/resp.json 2>/dev/null || true
+          # Hvaða svar sem er (líka t.d. 401/403 vegna réttinda á töflunni) þýðir
+          # að verkefnið er vakandi og virkt — það er allt sem þarf fyrir keep-alive.
+          # Bara "000" (engin tenging náðist) er merki um að eitthvað sé í ólagi.
+          if [ "$STATUS" = "000" ]; then
+            echo "::error::Náði ekki sambandi við Supabase — verkefnið gæti verið í pásu eða óaðgengilegt."
+            exit 1
+          fi
