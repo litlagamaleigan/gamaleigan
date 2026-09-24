@@ -201,6 +201,8 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
     <input type="password" id="passwordInput" placeholder="Lykilorð" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     <button class="btn-y" onclick="login()">Skrá inn</button>
     <p class="login-error" id="loginError">Rangt netfang eða lykilorð — reyndu aftur</p>
+    <p class="login-error" id="loginInfo" style="color:var(--green)"></p>
+    <p style="margin-top:14px"><a href="#" onclick="forgotPassword();return false" style="color:var(--y);font-size:13px;text-decoration:none">Gleymt lykilorð?</a></p>
   </div>
 </div>
 
@@ -334,13 +336,13 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
 <div class="modal-overlay" id="newModal" onclick="if(event.target===this)closeNewModal()">
   <div class="modal">
     <div class="modal-top">
-      <h3>Nýr þjónustusamningur</h3>
+      <h3 id="newModalTitle">Nýr þjónustusamningur</h3>
       <button class="modal-close" onclick="closeNewModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-row-2">
         <div class="form-group">
-          <label>Nafn viðskiptavinar</label>
+          <label>Nafn tengiliðs / undirritara</label>
           <input type="text" id="f_name" placeholder="Jón Jónsson">
         </div>
         <div class="form-group">
@@ -354,7 +356,7 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
           <input type="tel" id="f_phone" placeholder="777-1234">
         </div>
         <div class="form-group">
-          <label>Fyrirtæki (ef við á)</label>
+          <label>Fyrirtæki (ef samningur er við fyrirtæki)</label>
           <input type="text" id="f_company" placeholder="Fyrirtæki ehf.">
         </div>
         <div class="form-group">
@@ -362,10 +364,11 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
           <input type="text" id="f_kennitala_einst" placeholder="000000-0000" maxlength="11">
         </div>
         <div class="form-group">
-          <label>Kennitala fyrirtækis (ef við á)</label>
+          <label>Kennitala fyrirtækis (verður kt. viðskiptavinar)</label>
           <input type="text" id="f_kennitala_fyrirt" placeholder="000000-0000" maxlength="11">
         </div>
       </div>
+      <p style="font-size:12px;color:var(--gray);margin:-8px 0 4px">Ef fyrirtæki er skráð verður það sjálfkrafa hinn formlegi viðskiptavinur á samningnum og í undirskrift — nafn og kennitala hér að ofan verða þá skráð sem undirritari / fyrirsvarsmaður.</p>
       <div class="form-group">
         <label>Þjónusta</label>
         <select id="f_service" onchange="updateServiceType()">
@@ -422,6 +425,10 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
         <div class="form-group">
           <label>Verð gámaleiga (kr. án VSK)</label>
           <input type="text" id="f_price" placeholder="t.d. 45.000 kr/mán">
+        </div>
+        <div class="form-group">
+          <label>Samningsdagsetning (birtist á samningnum)</label>
+          <input type="date" id="f_contract_date">
         </div>
       </div>
 
@@ -495,7 +502,7 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeNewModal()">Hætta við</button>
-      <button class="btn-create" onclick="createContract()">Búa til samning →</button>
+      <button class="btn-create" id="newModalSubmitBtn" onclick="createContract()">Búa til samning →</button>
     </div>
   </div>
 </div>
@@ -534,8 +541,10 @@ body{background:var(--dark);color:var(--white);min-height:100vh}
     </div>
     <div class="modal-body" id="detailBody"></div>
     <div class="modal-footer">
+      <button class="btn-cancel" style="color:var(--red);border-color:var(--red)" onclick="deleteContract(currentContractId)">🗑 Eyða samningi</button>
       <button class="btn-cancel" onclick="closeDetailModal()">Loka</button>
       <button class="btn-cancel" style="color:var(--gray)" onclick="downloadContract(currentContractId)">⬇ Sækja PDF</button>
+      <button class="btn-cancel" onclick="openEditModal(currentContractId)">✏️ Breyta samningi</button>
       <button class="btn-create" onclick="copyCurrentLink()">Afrita link</button>
     </div>
   </div>
@@ -598,20 +607,23 @@ function updateServiceType() {
   }
 }
 
-function getTermsHTML(service) {
+function getTermsHTML(service, isFinal) {
   const type = getServiceType(service);
   if (type === 'vetrar') {
     return `
-      <div class="term-line"><div class="term-num">1.</div><div class="term-txt"><strong>Gildistími og uppsögn:</strong> Samningur þessi er ótímabundinn. Báðir aðilar geta sagt honum upp að gefnum 5 daga skriflegum fyrirvara á gunnar@gamaleigan.is. Framlengist sjálfkrafa yfir á næsta vetur nema tilkynnt sé um annað.</div></div>
-      <div class="term-line"><div class="term-num">2.</div><div class="term-txt"><strong>Umfang þjónustu:</strong> Gámaleigan ehf. sér um handmokstur, skafningu, söltun eða söndun á skilgreindu svæði eftir þörfum og völdum þjónustuflokki.</div></div>
-      <div class="term-line"><div class="term-num">3.</div><div class="term-txt"><strong>Snjómokstur:</strong> Snjór er fjarlægður af samningsbundnum svæðum með tækjum.</div></div>
-      <div class="term-line"><div class="term-num">4.</div><div class="term-txt"><strong>Söltun:</strong> Salti er dreift til að vinna gegn hálku og ísingu á umbeðnum svæðum.</div></div>
-      <div class="term-line"><div class="term-num">5.</div><div class="term-txt"><strong>Handmokstur / söltun og söndun:</strong> Þjónusta á svæðum sem ekki er hægt að ná til með vélum, miðast við svæði á korti.</div></div>
-      <div class="term-line"><div class="term-num">6.</div><div class="term-txt"><strong>Vöktun:</strong> Gámaleigan ehf. fylgist reglulega með veðurspám og veðurskilyrðum á tímabilinu 15. október til 15. apríl. Þjónustuaðili metur sjálfstætt hvenær þörf er á aðgerðum með hliðsjón af veðurspá, ísingu og ástandi svæðisins. Heimsóknir fara eftir veðurskilyrðum. Viðskiptavinur getur alltaf haft samband ef hann telur þörf á aðgerð.</div></div>
-      <div class="term-line"><div class="term-num">7.</div><div class="term-txt"><strong>Þjónustuflokkar:</strong> 1. flokkur — við minnstu þörf. 2. flokkur — um leið og eðlileg þörf skapast. 3. flokkur — einungis þegar brýn nauðsyn krefur.</div></div>
-      <div class="term-line"><div class="term-num">8.</div><div class="term-txt"><strong>Verð:</strong> Gámaleigunni ehf. er heimilt að hækka verð einu sinni á ári í samræmi við vísitölu neysluverðs. Viðskiptavinur fær mánaðarfyrirvara.</div></div>
-      <div class="term-line"><div class="term-num">9.</div><div class="term-txt"><strong>Ábyrgð:</strong> Gámaleigan ehf. ber enga skaðabótaábyrgð á líkams- eða eignatjóni vegna hálku á þjónustusvæðinu, né á skemmdum á kantsteinum eða hlutum undir snjó.</div></div>
-      <div class="term-line"><div class="term-num">10.</div><div class="term-txt"><strong>Lögsaga:</strong> Samningur þessi heyrir undir íslensk lög og Héraðsdóm Reykjavíkur. Öll tilboð eru trúnaðarmál og gilda í 30 daga frá útgáfudegi.</div></div>
+      <div class="term-line"><div class="term-num">1.</div><div class="term-txt"><strong>Gildistími og uppsögn:</strong> Samningur þessi er bundinn við vetrartímabilið 15. október til 15. apríl ár hvert. Á meðan tímabilið stendur verður samningnum hvorki sagt upp né honum rift, nema um verulegar vanefndir sé að ræða, t.d. sinni þjónustuaðili ekki þjónustunni eða greiði viðskiptavinur ekki reikninga, er gagnaðila heimilt að rifta samningnum fyrirvaralaust. Samningurinn framlengist sjálfkrafa fyrir næsta vetrartímabil nema honum sé sagt upp skriflega, á netfang þjónustuaðila, eigi síðar en 15. júlí ár hvert, þ.e. með minnst 3 mánaða fyrirvara fyrir upphaf næsta tímabils þann 15. október.</div></div>
+      <div class="term-line"><div class="term-num">2.</div><div class="term-txt"><strong>Greiðsluskilmálar:</strong> Reikningar eru gefnir út mánaðarlega eftir á fyrir veitta þjónustu. Gjalddagi er 1. hvers mánaðar og eindagi 30 dögum síðar. Sé ekki greitt á eindaga reiknast dráttarvextir frá gjalddaga.</div></div>
+      <div class="term-line"><div class="term-num">3.</div><div class="term-txt"><strong>Umfang þjónustu:</strong> Gámaleigan ehf. sér um handmokstur, skafningu, söltun eða söndun á skilgreindu svæði eftir þörfum og völdum þjónustuflokki.</div></div>
+      <div class="term-line"><div class="term-num">4.</div><div class="term-txt"><strong>Snjómokstur:</strong> Snjór er fjarlægður af samningsbundnum svæðum með tækjum.</div></div>
+      <div class="term-line"><div class="term-num">5.</div><div class="term-txt"><strong>Söltun:</strong> Salti er dreift til að vinna gegn hálku og ísingu á umbeðnum svæðum.</div></div>
+      <div class="term-line"><div class="term-num">6.</div><div class="term-txt"><strong>Handmokstur / söltun og söndun:</strong> Ef samningur þessi felur í sér þjónustu við handmokstur á svæðum sem ekki er hægt að ná til með vélum, skal það svæði vera sérstaklega skilgreint, t.d. með mynd, og tilgreint í athugasemdum samningsins.</div></div>
+      <div class="term-line"><div class="term-num">7.</div><div class="term-txt"><strong>Vöktun:</strong> Gámaleigan ehf. fylgist reglulega með veðurspám og veðurskilyrðum á tímabilinu 15. október til 15. apríl. Þjónustuaðili metur sjálfstætt hvenær þörf er á aðgerðum með hliðsjón af veðurspá, ísingu og ástandi svæðisins. Heimsóknir fara eftir veðurskilyrðum. Viðskiptavinur getur alltaf haft samband ef hann telur þörf á aðgerð.</div></div>
+      <div class="term-line"><div class="term-num">8.</div><div class="term-txt"><strong>Þjónustuflokkar:</strong> 1. flokkur: við minnstu þörf. 2. flokkur: um leið og eðlileg þörf skapast. 3. flokkur: einungis þegar brýn nauðsyn krefur.</div></div>
+      <div class="term-line"><div class="term-num">9.</div><div class="term-txt"><strong>Aðgengi og hindranir:</strong> Viðskiptavinur skal tryggja aðgengi að þjónustusvæðinu. Gámaleigan ehf. ber ekki ábyrgð á því ef ekki er hægt að sinna mokstri eða söltun vegna bíla sem leggja í stæði eða annarra hindrana sem loka fyrir aðgengi tækja. Mælst er til þess að viðskiptavinur merki sérstaklega ójöfnur, brunna eða lága kantsteina.</div></div>
+      <div class="term-line"><div class="term-num">10.</div><div class="term-txt"><strong>Verð:</strong> Gámaleigunni ehf. er heimilt að hækka verð einu sinni á ári í samræmi við vísitölu neysluverðs. Viðskiptavinur fær mánaðarfyrirvara.</div></div>
+      <div class="term-line"><div class="term-num">11.</div><div class="term-txt"><strong>Ábyrgð:</strong> Gámaleigan ehf. ber enga skaðabótaábyrgð á líkams- eða eignatjóni vegna hálku á þjónustusvæðinu, né á skemmdum á kantsteinum eða hlutum undir snjó.</div></div>
+      <div class="term-line"><div class="term-num">12.</div><div class="term-txt"><strong>Óviðráðanleg atvik:</strong> Gámaleigan ehf. undanskilur sig ábyrgð á töfum eða frestun á þjónustu ef um er að ræða óviðráðanleg atvik, svo sem bilanir á tækjum, lokanir á vegum eða önnur atvik sem þjónustuaðili hefur enga stjórn á.</div></div>
+      <div class="term-line"><div class="term-num">13.</div><div class="term-txt"><strong>Lögsaga:</strong> Samningur þessi heyrir undir íslensk lög og Héraðsdóm Reykjavíkur.${isFinal ? '' : ' Öll tilboð eru trúnaðarmál og gilda í 30 daga frá útgáfudegi.'}</div></div>
     `;
   } else {
     return `
@@ -695,6 +707,7 @@ function downloadContract(id) {
       ${priceRowPrint('Tímagjald 16T Hjólavél', c.timagjald_hjol)}
       ${priceRowPrint('Komugjald vörubíll', c.komugjald_vorubil)}
       ${priceRowPrint('Losunargjald á snjó', c.losunargjald_snjo)}
+      ${c.komugjald_hjol && c.timagjald_hjol ? `<tr><td colspan="2" style="font-size:10px;color:#888;font-weight:400;padding-top:4px">Komugjald 16T Hjólavél er fast gjald fyrir útkall, óháð vinnutíma. Tímagjald 16T Hjólavél leggst við á hverja klukkustund sem vélin er við vinnu á staðnum.</td></tr>` : ''}
     </table>` : `
     <h3>Verðflokkar gámaleiga (án VSK)</h3>
     <table class="price-tbl">
@@ -707,7 +720,7 @@ function downloadContract(id) {
     </table>`;
 
   const levels = {'1':'1. flokkur — Hæsta þjónustustig','2':'2. flokkur — Hefðbundnar kröfur','3':'3. flokkur — Lágmarksþjónusta'};
-  const terms = getTermsHTML(c.service)
+  const terms = getTermsHTML(c.service, true)
     .replace(/<div class="term-line">/g,'<tr>')
     .replace(/<\/div>\s*<\/div>/g,'</td></tr>')
     .replace(/<\/div>/g,'')
@@ -726,9 +739,9 @@ function downloadContract(id) {
   .logo span{display:block;font-size:10px;color:#888;font-weight:400;margin-top:3px}
   .status{background:${c.status==="accepted"?"#e8f5e9":"#fce4e4"};color:${c.status==="accepted"?"#2e7d32":"#c62828"};border-radius:4px;padding:4px 12px;font-size:11px;font-weight:700;text-transform:uppercase}
   h2{font-size:22px;font-weight:900;margin:0 0 18px;color:#111}
-  h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin:18px 0 8px;border-top:1px solid #eee;padding-top:12px}
+  h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin:12px 0 6px;border-top:1px solid #eee;padding-top:8px}
   table{width:100%;border-collapse:collapse;margin-bottom:4px}
-  td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+  td{padding:5px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}
   td:first-child{color:#666;width:45%}
   td:last-child{font-weight:600}
   .price-tbl td:last-child{color:#E8925A;font-size:14px}
@@ -739,7 +752,7 @@ function downloadContract(id) {
   .tn{color:#E8925A;font-weight:700;width:26px}
   .footer{margin-top:40px;padding-top:14px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:10px;color:#aaa}
   .sign-area{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:60px;padding-top:16px;border-top:1px solid #eee}
-  .sign-box{border-top:1px solid #333;padding-top:8px;font-size:10px;color:#666}
+  .sign-box{border-top:1px solid #333;padding-top:10px;font-size:13px;line-height:2;color:#666}
   @media print{
     body{padding:24px}
     @page{margin-top:1cm;margin-bottom:0.5cm}
@@ -758,10 +771,13 @@ function downloadContract(id) {
   <tr><td>Þjónustuaðili</td><td>Gámaleigan ehf.</td></tr>
   <tr><td>Kennitala þjónustuaðila</td><td>671021-2150</td></tr>
   <tr><td>VSK númer</td><td>143180</td></tr>
+  ${c.company ? `
+  <tr><td>Viðskiptavinur</td><td>${c.company}</td></tr>
+  ${c.kennitala_fyrirt ? `<tr><td>Kennitala viðskiptavinar</td><td>${c.kennitala_fyrirt}</td></tr>` : ''}
+  ` : `
   <tr><td>Viðskiptavinur</td><td>${c.name}</td></tr>
-  ${c.kennitala_einst ? `<tr><td>Kennitala undirritara</td><td>${c.kennitala_einst}</td></tr>` : ''}
-  ${c.company ? `<tr><td>Fyrirtæki</td><td>${c.company}</td></tr>` : ''}
-  ${c.kennitala_fyrirt ? `<tr><td>Kennitala fyrirtækis</td><td>${c.kennitala_fyrirt}</td></tr>` : ''}
+  ${c.kennitala_einst ? `<tr><td>Kennitala viðskiptavinar</td><td>${c.kennitala_einst}</td></tr>` : ''}
+  `}
   <tr><td>Netfang</td><td>${c.email}</td></tr>
   <tr><td>Sími</td><td>${c.phone || '—'}</td></tr>
 </table>
@@ -771,7 +787,7 @@ function downloadContract(id) {
   <tr><td>Þjónusta</td><td>${c.service}</td></tr>
   <tr><td>Heimilisfang þjónustu</td><td>${c.address || '—'}</td></tr>
   ${c.thjonustuflokkar ? `<tr><td>Þjónustuflokkar</td><td>${levels[c.thjonustuflokkar] || ''}</td></tr>` : ''}
-  <tr><td>Samningur dagsettur</td><td>${formatDate(c.created)}</td></tr>
+  <tr><td>Samningur dagsettur</td><td>${formatDate(c.contract_date || c.created)}</td></tr>
   ${c.notes ? `<tr><td>Athugasemdir</td><td>${c.notes}</td></tr>` : ''}
 </table>
 
@@ -782,9 +798,15 @@ ${pricingPrint ? `<div class="price-section">${pricingPrint}</div>` : ''}
 <table class="terms-tbl">${terms}</table>
 
 <div class="sign-area">
-  <div class="sign-box">Undirskrift viðskiptavinar<br><br>_________________________<br><small style="color:#999">Nafn: ${c.name}</small><br><small style="color:#999">Dagsetning: _____________</small></div>
-  <div class="sign-box">Undirskrift Gámaleigunar<br><br>_________________________</div>
+  <div class="sign-box">${c.company ? `Undirskrift ${c.company}.` : 'Undirskrift viðskiptavinar'}<br><div style="border-bottom:1px solid #333;width:100%;margin:48px 0 8px"></div><span style="color:#999">Dagsetning: _____________</span></div>
+  <div class="sign-box">Undirskrift Gámaleigan ehf.<br><div style="border-bottom:1px solid #333;width:100%;margin:48px 0 8px"></div></div>
 </div>
+
+${c.image ? `
+<div class="page-break"></div>
+<h3>Fylgiskjal 1 — Þjónustusvæði</h3>
+<img src="${c.image}" style="width:100%;max-height:600px;object-fit:contain;border:1px solid #eee;border-radius:6px">
+` : ''}
 
 <div class="footer">
   <span>Gámaleigan ehf. · Kt. 671021-2150 · VSK nr. 143180 · gunnar@gamaleigan.is · 791-3300</span>
@@ -806,6 +828,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let contracts = [];
 let currentContractId = null;
+let editingContractId = null;
 let realtimeChannel = null;
 
 // Supabase-js les token úr slóðinni sjálft (og hreinsar hana svo strax á
@@ -893,6 +916,28 @@ async function login() {
   subscribeRealtime();
 }
 
+async function forgotPassword() {
+  const email = document.getElementById('emailInput').value.trim();
+  const info = document.getElementById('loginInfo');
+  const err = document.getElementById('loginError');
+  err.style.display = 'none';
+  if (!email) {
+    err.textContent = 'Sláðu fyrst inn netfangið þitt hér fyrir ofan.';
+    err.style.display = 'block';
+    return;
+  }
+  const redirectTo = window.location.href.split('?')[0];
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) {
+    err.textContent = 'Villa: ' + error.message;
+    err.style.display = 'block';
+    info.style.display = 'none';
+    return;
+  }
+  info.textContent = 'Ef þetta netfang er skráð admin-notandi var tölvupóstur með endurstillingarhlekk sendur á ' + email + '.';
+  info.style.display = 'block';
+}
+
 async function logout() {
   await sb.auth.signOut();
   unsubscribeRealtime();
@@ -971,7 +1016,7 @@ function renderTable(data) {
     const expiresIn = c.status === 'pending' && !isExpired(c) ? Math.ceil((30*24*60*60*1000 - (Date.now()-c.created)) / (24*60*60*1000)) : null;
     return `
     <div class="table-row" onclick="openDetail('${c.id}')">
-      <div class="table-cell name">${c.name}<br><span class="email">${c.company || c.email}</span></div>
+      <div class="table-cell name">${c.company || c.name}<br><span class="email">${c.company ? c.name : c.email}</span></div>
       <div class="table-cell">${c.service}</div>
       <div class="table-cell" style="color:var(--gray);font-size:13px">${formatDate(c.created)}${expiresIn ? `<div style="font-size:11px;color:var(--y)">Rennur út eftir ${expiresIn}d</div>` : ''}</div>
       <div class="table-cell">
@@ -987,6 +1032,7 @@ function renderTable(data) {
 function filterContracts(q) {
   const filtered = contracts.filter(c =>
     c.name.toLowerCase().includes(q.toLowerCase()) ||
+    (c.company && c.company.toLowerCase().includes(q.toLowerCase())) ||
     c.email.toLowerCase().includes(q.toLowerCase()) ||
     c.service.toLowerCase().includes(q.toLowerCase())
   );
@@ -994,12 +1040,64 @@ function filterContracts(q) {
 }
 
 // ── NEW CONTRACT ──
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
 function openNewModal() {
+  editingContractId = null;
+  document.getElementById('newModalTitle').textContent = 'Nýr þjónustusamningur';
+  document.getElementById('newModalSubmitBtn').textContent = 'Búa til samning →';
+  document.getElementById('f_contract_date').value = todayISO();
   document.getElementById('newModal').classList.add('open');
 }
+
+function openEditModal(id) {
+  const c = contracts.find(x => x.id === id);
+  if (!c) return;
+  editingContractId = id;
+
+  const fields = ['name','email','phone','company','kennitala_einst','kennitala_fyrirt','address','price','notes','voktun','snjomokstur','soltun','snjosalt','komugjald_hjol','timagjald_hjol','komugjald_vorubil','losunargjald_snjo','manadarsaskrift','komugjald','losunargjald','losunargjald_stein','faerslugjald','faerslugjald_utan'];
+  fields.forEach(f => {
+    const el = document.getElementById('f_' + f);
+    if (el) el.value = c[f] || '';
+  });
+
+  const sel = document.getElementById('f_service');
+  sel.selectedIndex = 0;
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].text === c.service) { sel.selectedIndex = i; break; }
+  }
+  updateServiceType();
+
+  document.getElementById('f_thjonustuflokkar').value = c.thjonustuflokkar || '';
+  showServiceLevel();
+
+  document.getElementById('f_contract_date').value = c.contract_date || todayISO();
+
+  currentImageBase64 = c.image || null;
+  document.getElementById('f_image').value = '';
+  if (c.image) {
+    document.getElementById('previewImg').src = c.image;
+    document.getElementById('imagePreview').style.display = 'block';
+    document.getElementById('imageUploadArea').style.display = 'none';
+  } else {
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('imageUploadArea').style.display = 'block';
+  }
+
+  document.getElementById('newModalTitle').textContent = 'Breyta samningi';
+  document.getElementById('newModalSubmitBtn').textContent = 'Vista breytingar →';
+
+  closeDetailModal();
+  document.getElementById('newModal').classList.add('open');
+}
+
 function closeNewModal() {
   document.getElementById('newModal').classList.remove('open');
-  ['f_name','f_email','f_phone','f_company','f_kennitala_einst','f_kennitala_fyrirt','f_address','f_price','f_notes','f_voktun','f_snjomokstur','f_soltun','f_snjosalt','f_komugjald_hjol','f_timagjald_hjol','f_komugjald_vorubil','f_losunargjald_snjo','f_manadarsaskrift','f_komugjald','f_losunargjald','f_losunargjald_stein','f_faerslugjald','f_faerslugjald_utan'].forEach(id => {
+  editingContractId = null;
+  ['f_name','f_email','f_phone','f_company','f_kennitala_einst','f_kennitala_fyrirt','f_address','f_price','f_contract_date','f_notes','f_voktun','f_snjomokstur','f_soltun','f_snjosalt','f_komugjald_hjol','f_timagjald_hjol','f_komugjald_vorubil','f_losunargjald_snjo','f_manadarsaskrift','f_komugjald','f_losunargjald','f_losunargjald_stein','f_faerslugjald','f_faerslugjald_utan'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.value = '';
   });
@@ -1022,6 +1120,7 @@ async function createContract() {
   const service = document.getElementById('f_service').options[document.getElementById('f_service').selectedIndex]?.text || '';
   const address = document.getElementById('f_address').value.trim();
   const price = document.getElementById('f_price').value.trim();
+  const contract_date = document.getElementById('f_contract_date').value || null;
   const notes = document.getElementById('f_notes').value.trim();
   const type = getServiceType(service);
   const voktun = document.getElementById('f_voktun').value.trim();
@@ -1047,6 +1146,7 @@ async function createContract() {
 
   const newContract = {
     name, email, phone, company, kennitala_einst, kennitala_fyrirt, service, address, notes,
+    contract_date,
     type: getServiceType(service),
     voktun, snjomokstur, soltun, snjosalt,
     komugjald_hjol, timagjald_hjol, komugjald_vorubil, losunargjald_snjo,
@@ -1054,6 +1154,20 @@ async function createContract() {
     manadarsaskrift, komugjald, losunargjald, losunargjald_stein, faerslugjald, faerslugjald_utan,
     image: currentImageBase64,
   };
+
+  if (editingContractId) {
+    const targetId = editingContractId;
+    const { error } = await sb.from('contracts').update(newContract).eq('id', targetId);
+    if (error) {
+      alert('Villa við að vista breytingar: ' + error.message);
+      return;
+    }
+    closeNewModal();
+    await loadContractsFromSupabase();
+    currentContractId = targetId;
+    alert('Samningi hefur verið breytt.');
+    return;
+  }
 
   const { data, error } = await sb.from('contracts').insert(newContract).select().single();
   if (error) {
@@ -1134,12 +1248,17 @@ function openDetail(id) {
   document.getElementById('detailBody').innerHTML = `
     <div class="detail-section">
       <h4>Viðskiptavinur</h4>
+      ${c.company ? `
+      <div class="detail-row"><span class="detail-key">Fyrirtæki</span><span class="detail-val">${c.company}</span></div>
+      <div class="detail-row"><span class="detail-key">Kt. viðskiptavinar</span><span class="detail-val">${c.kennitala_fyrirt || '—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Undirritari / fyrirsvarsm.</span><span class="detail-val">${c.name}</span></div>
+      <div class="detail-row"><span class="detail-key">Kt. undirritara</span><span class="detail-val">${c.kennitala_einst || '—'}</span></div>
+      ` : `
       <div class="detail-row"><span class="detail-key">Nafn</span><span class="detail-val">${c.name}</span></div>
       <div class="detail-row"><span class="detail-key">Kennitala</span><span class="detail-val">${c.kennitala_einst || '—'}</span></div>
+      `}
       <div class="detail-row"><span class="detail-key">Netfang</span><span class="detail-val">${c.email}</span></div>
       <div class="detail-row"><span class="detail-key">Sími</span><span class="detail-val">${c.phone || '—'}</span></div>
-      <div class="detail-row"><span class="detail-key">Fyrirtæki</span><span class="detail-val">${c.company || '—'}</span></div>
-      <div class="detail-row"><span class="detail-key">Kt. fyrirtækis</span><span class="detail-val">${c.kennitala_fyrirt || '—'}</span></div>
     </div>
     <div class="detail-section">
       <h4>Samningur</h4>
@@ -1148,10 +1267,18 @@ function openDetail(id) {
       ${c.thjonustuflokkar ? `<div class="detail-row"><span class="detail-key">Þjónustuflokkar</span><span class="detail-val">${c.thjonustuflokkar}. flokkur</span></div>` : ''}
       <div class="detail-row"><span class="detail-key">Athugasemdir</span><span class="detail-val">${c.notes || '—'}</span></div>
     </div>
+    ${c.image ? `
+    <div class="detail-section">
+      <h4>🗺️ Þjónustusvæði</h4>
+      <div style="border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.06)">
+        <img src="${c.image}" style="width:100%;display:block;max-height:400px;object-fit:cover">
+      </div>
+    </div>` : ''}
     ${pricingHTML}
     <div class="detail-section">
       <h4>Staða</h4>
       <div class="detail-row"><span class="detail-key">Staða</span><span class="detail-val"><span class="status-badge ${getStatusClass(getStatus(c))}"><span class="status-dot"></span>${getStatusLabel(getStatus(c))}</span></span></div>
+      <div class="detail-row"><span class="detail-key">Samningur dagsettur</span><span class="detail-val">${formatDate(c.contract_date || c.created)}</span></div>
       <div class="detail-row"><span class="detail-key">Búinn til</span><span class="detail-val">${formatDate(c.created)}</span></div>
       <div class="detail-row"><span class="detail-key">Rennur út</span><span class="detail-val">${formatDate(c.created + 30*24*60*60*1000)}</span></div>
       <div class="detail-row"><span class="detail-key">Skoðað af viðsk.</span><span class="detail-val" style="color:${c.viewedAt ? 'var(--blue)' : 'var(--gray)'}">${c.viewedAt ? '👁 ' + formatDate(c.viewedAt) : 'Ekki skoðað'}</span></div>
@@ -1171,6 +1298,23 @@ function openDetail(id) {
 
 function closeDetailModal() {
   document.getElementById('detailModal').classList.remove('open');
+}
+
+async function deleteContract(id) {
+  if (!id) return;
+  const c = contracts.find(x => x.id === id);
+  const nafn = c ? (c.company || c.name) : 'þennan samning';
+  const stadfest = confirm(`Eyða samningi fyrir "${nafn}"?\n\nÞetta er ekki hægt að afturkalla — samningurinn og öll gögn hans (mynd, verð, saga) hverfa endanlega.`);
+  if (!stadfest) return;
+
+  const { error } = await sb.from('contracts').delete().eq('id', id);
+  if (error) {
+    alert('Villa við að eyða samningi: ' + error.message);
+    return;
+  }
+  closeDetailModal();
+  contracts = contracts.filter(x => x.id !== id);
+  renderAdmin();
 }
 
 // ── CONTRACT HELPER FUNCTIONS ──
@@ -1198,8 +1342,8 @@ function buildPricingHTML(c) {
       c.snjomokstur ? ['Snjómokstur', 'Verð á heimsókn', c.snjomokstur] : null,
       c.soltun ? ['Söltun', 'Verð á heimsókn', c.soltun] : null,
       c.snjosalt ? ['Snjómokstur + Söltun', 'Verð á heimsókn', c.snjosalt] : null,
-      c.komugjald_hjol ? ['Komugjald — 16T Hjólavél', 'Komugjald á hverja heimsókn', c.komugjald_hjol] : null,
-      c.timagjald_hjol ? ['Tímagjald — 16T Hjólavél', 'Gjald á hverja klukkustund', c.timagjald_hjol] : null,
+      c.komugjald_hjol ? ['Komugjald — 16T Hjólavél', 'Fast gjald fyrir að koma vélinni á staðinn, óháð vinnutíma', c.komugjald_hjol] : null,
+      c.timagjald_hjol ? ['Tímagjald — 16T Hjólavél', 'Gjald á hverja klukkustund sem vélin vinnur, til viðbótar við komugjaldið', c.timagjald_hjol] : null,
       c.komugjald_vorubil ? ['Komugjald — Vörubíll', 'Komugjald á hverja heimsókn', c.komugjald_vorubil] : null,
       c.losunargjald_snjo ? ['Losunargjald á snjó', 'Gjald við losun snjós', c.losunargjald_snjo] : null,
     ].filter(Boolean);
@@ -1328,10 +1472,10 @@ async function renderContractView(id) {
     <div class="section-block">
       <div class="section-block-title">Samningsupplýsingar</div>
       <div class="info-grid">
-        <div class="info-item"><div class="info-item-lbl">Viðskiptavinur</div><div class="info-item-val">${c.name}${c.company ? ' — ' + c.company : ''}</div></div>
+        <div class="info-item"><div class="info-item-lbl">Viðskiptavinur</div><div class="info-item-val">${c.company || c.name}</div></div>
         <div class="info-item"><div class="info-item-lbl">Þjónusta</div><div class="info-item-val hl">${c.service}</div></div>
-        ${c.kennitala_einst ? `<div class="info-item"><div class="info-item-lbl">Kennitala einstaklings / undirritara</div><div class="info-item-val">${c.kennitala_einst}</div></div>` : ''}
-        ${c.kennitala_fyrirt ? `<div class="info-item"><div class="info-item-lbl">Kennitala fyrirtækis</div><div class="info-item-val">${c.kennitala_fyrirt}</div></div>` : ''}
+        ${c.company ? `<div class="info-item"><div class="info-item-lbl">Kennitala viðskiptavinar</div><div class="info-item-val">${c.kennitala_fyrirt || '—'}</div></div>` : c.kennitala_einst ? `<div class="info-item"><div class="info-item-lbl">Kennitala viðskiptavinar</div><div class="info-item-val">${c.kennitala_einst}</div></div>` : ''}
+        ${c.company ? `<div class="info-item"><div class="info-item-lbl">Undirritari / fyrirsvarsmaður</div><div class="info-item-val">${c.name}${c.kennitala_einst ? ' · kt. ' + c.kennitala_einst : ''}</div></div>` : ''}
         <div class="info-item"><div class="info-item-lbl">Heimilisfang</div><div class="info-item-val">${c.address || '—'}</div></div>
         <div class="info-item"><div class="info-item-lbl">Gildir til</div><div class="info-item-val">${formatDate(c.created + 30*24*60*60*1000)}</div></div>
         ${c.notes ? `<div class="info-item" style="grid-column:1/-1"><div class="info-item-lbl">Athugasemdir</div><div class="info-item-val" style="font-weight:400;font-size:14px;color:var(--gray)">${c.notes}</div></div>` : ''}
